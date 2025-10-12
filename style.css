@@ -1,0 +1,205 @@
+ body {
+   background: radial-gradient(circle at center, #111 0%, #000 100%);
+   color: #fff;
+   font-family: system-ui, sans-serif;
+   display: flex;
+   flex-direction: column;
+   align-items: center;
+   justify-content: center;
+   height: 100vh;
+   margin: 0;
+   gap: 1rem;
+   text-align: center;
+ }
+
+ h2 {
+   margin-bottom: 0.3rem;
+   text-shadow: 0 0 5px #00ccff;
+ }
+
+ button#start-btn {
+   background: #00ccff;
+   color: #000;
+   border: none;
+   border-radius: 12px;
+   font-size: 1.2rem;
+   padding: 0.8rem 1.6rem;
+   cursor: pointer;
+   transition: all 0.2s;
+   box-shadow: 0 0 10px #00ccff99;
+ }
+
+ button#start-btn:hover {
+   background: #00e6ff;
+   box-shadow: 0 0 15px #00e6ff;
+ }
+
+ .hidden {
+   display: none;
+ }
+
+ #interface {
+   display: flex;
+   flex-direction: column;
+   align-items: center;
+   justify-content: center;
+   gap: 1rem;
+ }
+
+
+ .datepicker {
+   display: flex;
+   gap: 1rem;
+   align-items: center;
+   justify-content: center;
+ }
+
+ .column-container {
+   display: flex;
+   flex-direction: column;
+   align-items: center;
+   gap: 0.2rem;
+ }
+
+ .column-label {
+   font-size: 0.8rem;
+   color: #aaa;
+ }
+
+ .column {
+   height: 90px;
+   width: 70px;
+   overflow: hidden;
+   border-radius: 10px;
+   background: #222;
+   box-shadow: inset 0 0 10px #000;
+   position: relative;
+ }
+
+ .column.active {
+   box-shadow: 0 0 15px #00ccff;
+   border: 2px solid #00ccff;
+ }
+
+ .numbers {
+   position: absolute;
+   top: 0;
+   left: 0;
+   width: 100%;
+   transition: transform 0.4s ease;
+ }
+
+ .numbers div {
+   height: 30px;
+   display: flex;
+   align-items: center;
+   justify-content: center;
+   font-size: 1.4rem;
+   color: #999;
+ }
+
+ .numbers div.active {
+   color: #00ccff;
+   font-weight: bold;
+   font-size: 1.6rem;
+ }
+
+ .info {
+   font-size: 1rem;
+   opacity: 0.8;
+ }
+
+ .progress-bar {
+   width: 200px;
+   height: 10px;
+   background: #333;
+   border-radius: 5px;
+   overflow: hidden;
+ }
+
+ .progress {
+   height: 100%;
+   background: limegreen;
+   width: 0%;
+   transition: width 0.1s;
+ }
+
+ .submitted {
+   color: #00ff99;
+   font-size: 1.3rem;
+   margin-top: 0.5rem;
+ }
+
+
+ .tuner {
+   position: relative;
+   width: 600px;
+   height: 30px;
+   background: #222;
+   border-radius: 8px;
+   overflow: hidden;
+ }
+
+ .tuner-zone {
+   position: absolute;
+   top: 0;
+   bottom: 0;
+   opacity: 0.6;
+ }
+
+ .low {
+   left: 0%;
+   width: 25%;
+   background: #ff5555;
+ }
+
+
+ .mid {
+   left: 25%;
+   width: 25%;
+   background: #ffaa00;
+ }
+
+
+ .high {
+   left: 50%;
+   width: 25%;
+   background: #55aaff;
+ }
+
+
+ .submit {
+   left: 75%;
+   width: 25%;
+   background: #00ff99;
+ }
+
+
+
+
+
+ .needle {
+   position: absolute;
+   top: 0;
+   bottom: 0;
+   width: 4px;
+   background: #fff;
+   border-radius: 2px;
+   transition: left 0.1s ease-out;
+ }
+
+ .labels {
+   width: 600px;
+   display: flex;
+   justify-content: space-between;
+   font-size: 0.8rem;
+   opacity: 0.7;
+ }
+
+ @media (max-width: 700px) {
+
+   .tuner,
+   .labels {
+     width: 90%;
+   }
+ }

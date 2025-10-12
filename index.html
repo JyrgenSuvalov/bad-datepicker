@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sing to Pick a Date</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="script.js" defer></script>
+</head>
+
+<body>
+  <h2>🎵 Sing to Pick a Date</h2>
+  <button id="start-btn">Start Microphone</button>
+
+  <div id="interface" class="hidden">
+    <div id="freq">Frequency: -- Hz</div>
+    <div id="note">Note: --</div>
+
+    <!-- Tuner Visual -->
+    <div class="tuner">
+      <div class="tuner-zone low"></div>
+      <div class="tuner-zone mid"></div>
+      <div class="tuner-zone high"></div>
+      <div class="tuner-zone submit"></div>
+      <div class="needle" id="needle"></div>
+    </div>
+    <div class="labels">
+      <span>Low (↓)</span>
+      <span>Mid (↑)</span>
+      <span>High (Next)</span>
+      <span>Submit (2s)</span>
+    </div>
+
+    <!-- Datepicker -->
+    <div class="datepicker">
+      <div class="column-container">
+        <div class="column-label">Day</div>
+        <div class="column" id="col-day">
+          <div class="numbers" id="day-numbers"></div>
+        </div>
+      </div>
+      <div class="column-container">
+        <div class="column-label">Month</div>
+        <div class="column" id="col-month">
+          <div class="numbers" id="month-numbers"></div>
+        </div>
+      </div>
+      <div class="column-container">
+        <div class="column-label">Year</div>
+        <div class="column" id="col-year">
+          <div class="numbers" id="year-numbers"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="info">🎶 Sing different pitch ranges to adjust day, month, year.</div>
+    <div class="progress-bar">
+      <div class="progress" id="progress"></div>
+    </div>
+    <div id="message"></div>
+  </div>
+</body>
+
+</html>
