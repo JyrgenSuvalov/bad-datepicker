@@ -19,6 +19,16 @@ class VoiceDatePicker {
     this.progressInterval = null;
     this.minMagnitude = 80; // Minimum magnitude to consider as valid input
 
+    // Frequency smoothing
+    this.frequencyHistory = [];
+    this.historySize = 8; // Number of readings to average
+
+    // Submit stability
+    this.isSubmitMode = false;
+    this.submitStartTime = 0;
+    this.lastValidSubmitTime = 0;
+    this.submitGracePeriod = 0.3; // Seconds allowed outside submit zone
+
     this.minFreq = 80;  // Minimum frequency to consider
     this.maxFreq = 350; // Maximum frequency to consider (much lower for easier singing)
 
@@ -112,10 +122,32 @@ class VoiceDatePicker {
 
     // Only return frequency if it's above a higher threshold and in our range
     if (maxMagnitude > this.minMagnitude && frequency >= this.minFreq && frequency <= this.maxFreq) {
-      return frequency;
+      return this.smoothFrequency(frequency);
     }
 
-    return 0;
+    return this.smoothFrequency(0);
+  }
+
+  smoothFrequency(frequency) {
+    // Add to history
+    this.frequencyHistory.push(frequency);
+
+    // Keep only recent history
+    if (this.frequencyHistory.length > this.historySize) {
+      this.frequencyHistory.shift();
+    }
+
+    // Calculate weighted average (more recent = higher weight)
+    let sum = 0;
+    let weightSum = 0;
+
+    for (let i = 0; i < this.frequencyHistory.length; i++) {
+      const weight = i + 1; // Linear weighting: 1, 2, 3, ... (more recent = higher weight)
+      sum += this.frequencyHistory[i] * weight;
+      weightSum += weight;
+    }
+
+    return weightSum > 0 ? sum / weightSum : 0;
   }
 
   updateDisplay(frequency) {
@@ -175,44 +207,104 @@ class VoiceDatePicker {
     const zone = this.getFrequencyZone(frequency);
     const currentTime = Date.now();
 
+    // Handle submit mode with tolerance
+    if (this.isSubmitMode) {
+      this.handleSubmitMode(zone, currentTime);
+      return;
+    }
+
+    // Handle regular navigation
+    if (zone === 'submit') {
+      this.enterSubmitMode(currentTime);
+    } else {
+      this.handleNavigationZone(zone, currentTime);
+    }
+  }
+
+  enterSubmitMode(currentTime) {
+    this.isSubmitMode = true;
+    this.submitStartTime = currentTime;
+    this.lastValidSubmitTime = currentTime;
+    this.startProgress();
+    this.lastActionZone = 'submit';
+  }
+
+  handleSubmitMode(zone, currentTime) {
+    const totalSubmitTime = (currentTime - this.submitStartTime) / 1000;
+
+    // Simplified: just check if we're in submit zone (with small grace for high zone)
+    if (zone === 'submit' || zone === 'high') {
+      // In valid zone - update valid time
+      this.lastValidSubmitTime = currentTime;
+    } else {
+      // Outside valid zones - check grace period
+      const timeOutsideZone = (currentTime - this.lastValidSubmitTime) / 1000;
+
+      if (timeOutsideZone > this.submitGracePeriod) {
+        // Grace period exceeded - reset submit mode
+        this.resetSubmitMode();
+        return;
+      }
+    }
+
+    // Update progress bar styling
+    this.updateProgressBarStyle(totalSubmitTime);
+
+    // Check if we've sustained long enough
+    if (totalSubmitTime >= this.submitThreshold) {
+      this.executeAction('submit');
+      this.resetSubmitMode();
+    }
+  }
+
+  handleNavigationZone(zone, currentTime) {
     // If this is a new zone or we haven't started tracking time yet
     if (zone !== this.lastActionZone) {
-      this.resetProgress();
       this.lastActionTime = currentTime;
       this.lastActionZone = zone;
-
-      // Only start progress bar for submit zone
-      if (zone === 'submit') {
-        this.startProgress();
-      }
       return;
     }
 
     // Calculate how long we've been in this zone
     const sustainedTime = (currentTime - this.lastActionTime) / 1000;
 
-    // Handle submit zone with progress bar and 2-second delay
-    if (zone === 'submit') {
-      if (sustainedTime >= this.submitThreshold) {
-        this.executeAction(zone);
-        this.resetProgress();
-        this.lastActionZone = null;
-      }
-    } else {
-      // For navigation zones, require 0.5 seconds of sustained frequency
-      if (sustainedTime >= this.actionThreshold) {
-        this.executeAction(zone);
-        this.resetProgress();
-        this.lastActionZone = null;
-      }
+    // For navigation zones, require sustained frequency
+    if (sustainedTime >= this.actionThreshold) {
+      this.executeAction(zone);
+      this.lastActionZone = null;
     }
+  }
+
+  updateProgressBarStyle(totalSubmitTime) {
+    // Simplified color coding
+    let backgroundColor = '#00ff99'; // Just green
+
+    this.progressBar.style.background = backgroundColor;
+
+    // Update message with countdown
+    const remaining = Math.max(0, this.submitThreshold - totalSubmitTime);
+    if (remaining > 0) {
+      this.messageEl.innerHTML = `<div style="color: ${backgroundColor}">🎵 Submitting in ${remaining.toFixed(1)}s...</div>`;
+    }
+  }
+
+  resetSubmitMode() {
+    this.isSubmitMode = false;
+    this.resetProgress();
+    this.lastActionZone = null;
+    this.messageEl.innerHTML = '';
   }
 
   startProgress() {
     this.progressBar.style.width = '0%';
 
     this.progressInterval = setInterval(() => {
-      const elapsed = (Date.now() - this.lastActionTime) / 1000;
+      if (!this.isSubmitMode) {
+        this.resetProgress();
+        return;
+      }
+
+      const elapsed = (Date.now() - this.submitStartTime) / 1000;
       const progress = (elapsed / this.submitThreshold) * 100;
 
       this.progressBar.style.width = `${Math.min(progress, 100)}%`;
@@ -229,7 +321,10 @@ class VoiceDatePicker {
       this.progressInterval = null;
     }
     this.progressBar.style.width = '0%';
+    this.progressBar.style.background = 'limegreen'; // Reset to default color
     this.lastActionTime = 0;
+    this.isSubmitMode = false;
+    this.messageEl.innerHTML = '';
   }
 
   executeAction(zone) {
@@ -280,7 +375,7 @@ class VoiceDatePicker {
 
   generateYears() {
     this.yearNumbers.innerHTML = '';
-    for (let i = 2020; i <= 2030; i++) {
+    for (let i = 1900; i <= 2030; i++) {
       const div = document.createElement('div');
       div.textContent = i;
       if (i === this.currentYear) div.classList.add('active');
@@ -310,7 +405,7 @@ class VoiceDatePicker {
     // Update year
     const yearElements = this.yearNumbers.children;
     Array.from(yearElements).forEach((el, index) => {
-      el.classList.toggle('active', 2020 + index === this.currentYear);
+      el.classList.toggle('active', 1900 + index === this.currentYear);
     });
 
     this.scrollToActive();
@@ -318,7 +413,7 @@ class VoiceDatePicker {
 
   scrollToActive() {
     const containers = [this.dayNumbers, this.monthNumbers, this.yearNumbers];
-    const values = [this.currentDay - 1, this.currentMonth - 1, this.currentYear - 2020];
+    const values = [this.currentDay - 1, this.currentMonth - 1, this.currentYear - 1900];
 
     containers.forEach((container, index) => {
       const activeIndex = values[index];
@@ -351,7 +446,7 @@ class VoiceDatePicker {
         this.currentMonth = this.currentMonth === 1 ? 12 : this.currentMonth - 1;
         break;
       case 2: // Year
-        this.currentYear = Math.max(2020, this.currentYear - 1);
+        this.currentYear = Math.max(1900, this.currentYear - 1);
         break;
     }
     this.validateAndUpdate();
