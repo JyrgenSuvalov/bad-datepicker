@@ -11,8 +11,8 @@ class VoiceDatePicker {
     this.currentMonth = 6;
     this.currentYear = 2024;
 
-    this.submitThreshold = 2.0; // Time in seconds to sustain frequency for submit
-    this.actionThreshold = 0.2; // Time in seconds to sustain frequency for navigation actions
+    this.submitThreshold = 1.0; // Time in seconds to sustain frequency for submit
+    this.actionThreshold = 0.5; // Time in seconds to sustain frequency for navigation actions
     this.lastActionTime = 0;
     this.lastActionZone = null;
     this.currentFrequency = 0;
@@ -28,6 +28,10 @@ class VoiceDatePicker {
     this.submitStartTime = 0;
     this.lastValidSubmitTime = 0;
     this.submitGracePeriod = 0.3; // Seconds allowed outside submit zone
+
+    // Action throttling
+    this.lastExecutedAction = 0;
+    this.actionCooldown = 1000; // Minimum ms between navigation actions
 
     this.minFreq = 80;  // Minimum frequency to consider
     this.maxFreq = 350; // Maximum frequency to consider (much lower for easier singing)
@@ -68,7 +72,7 @@ class VoiceDatePicker {
       this.microphone = this.audioContext.createMediaStreamSource(stream);
 
       this.analyser.fftSize = 4096;
-      this.analyser.smoothingTimeConstant = 0.8;
+      this.analyser.smoothingTimeConstant = 0.5;
 
       const bufferLength = this.analyser.frequencyBinCount;
       this.dataArray = new Uint8Array(bufferLength);
@@ -97,9 +101,25 @@ class VoiceDatePicker {
 
     this.updateDisplay(frequency);
     this.updateNeedle(frequency);
+
+    // Safety check: if we've been in submit mode for too long without progress, reset
+    if (this.isSubmitMode && this.lastActionTime && (Date.now() - this.lastActionTime) > 5000) {
+      console.log('Submit mode timeout - forcing reset');
+      this.forceReset();
+    }
+
     this.processVoiceCommand(frequency);
 
     requestAnimationFrame(() => this.analyze());
+  }
+
+  forceReset() {
+    this.isSubmitMode = false;
+    this.lastActionZone = null;
+    this.lastActionTime = 0;
+    this.lastExecutedAction = 0;
+    this.resetProgress();
+    console.log('Force reset completed');
   }
 
   getFrequency() {
@@ -198,66 +218,78 @@ class VoiceDatePicker {
   }
 
   processVoiceCommand(frequency) {
+    console.log(`processVoiceCommand: freq=${frequency.toFixed(1)}, isListening=${this.isListening}`);
+
     if (frequency === 0) {
-      this.resetProgress();
-      this.lastActionZone = null;
+      // Only reset if we were actually tracking something
+      if (this.lastActionZone !== null) {
+        console.log('Frequency is 0, resetting state');
+        this.resetProgress();
+        this.lastActionZone = null;
+        this.isSubmitMode = false;
+      }
       return;
     }
 
     const zone = this.getFrequencyZone(frequency);
     const currentTime = Date.now();
 
-    // Handle submit mode with tolerance
-    if (this.isSubmitMode) {
-      this.handleSubmitMode(zone, currentTime);
-      return;
-    }
+    console.log(`Zone: ${zone}, Submit mode: ${this.isSubmitMode}, Last zone: ${this.lastActionZone}, Cooldown remaining: ${Math.max(0, this.actionCooldown - (currentTime - this.lastExecutedAction))}ms`);
 
-    // Handle regular navigation
+    // Simplified approach: treat submit like any other zone
     if (zone === 'submit') {
-      this.enterSubmitMode(currentTime);
+      this.handleSubmitZone(zone, currentTime);
     } else {
+      // Reset submit mode if we're not in submit zone
+      if (this.isSubmitMode) {
+        console.log('Leaving submit mode');
+        this.resetSubmitMode();
+      }
       this.handleNavigationZone(zone, currentTime);
     }
   }
 
-  enterSubmitMode(currentTime) {
-    this.isSubmitMode = true;
-    this.submitStartTime = currentTime;
-    this.lastValidSubmitTime = currentTime;
-    this.startProgress();
-    this.lastActionZone = 'submit';
-  }
+  handleSubmitZone(zone, currentTime) {
+    console.log(`handleSubmitZone: cooldown check = ${currentTime - this.lastExecutedAction < this.actionCooldown}`);
 
-  handleSubmitMode(zone, currentTime) {
-    const totalSubmitTime = (currentTime - this.submitStartTime) / 1000;
-
-    // Simplified: just check if we're in submit zone (with small grace for high zone)
-    if (zone === 'submit' || zone === 'high') {
-      // In valid zone - update valid time
-      this.lastValidSubmitTime = currentTime;
-    } else {
-      // Outside valid zones - check grace period
-      const timeOutsideZone = (currentTime - this.lastValidSubmitTime) / 1000;
-
-      if (timeOutsideZone > this.submitGracePeriod) {
-        // Grace period exceeded - reset submit mode
-        this.resetSubmitMode();
-        return;
-      }
+    // Check if we're still in cooldown period for submit
+    if (currentTime - this.lastExecutedAction < this.actionCooldown) {
+      console.log('Submit in cooldown, ignoring');
+      return; // Still in cooldown, ignore input
     }
 
-    // Update progress bar styling
-    this.updateProgressBarStyle(totalSubmitTime);
+    // If this is a new zone or we haven't started tracking time yet
+    if (zone !== this.lastActionZone) {
+      console.log('Starting submit zone tracking');
+      this.lastActionTime = currentTime;
+      this.lastActionZone = zone;
+      this.isSubmitMode = true;
+      this.startProgress();
+      return;
+    }
+
+    // Calculate how long we've been in submit zone
+    const sustainedTime = (currentTime - this.lastActionTime) / 1000;
+    console.log(`Submit sustained time: ${sustainedTime.toFixed(2)}s / ${this.submitThreshold}s`);
+
+    // Update progress bar
+    this.updateProgressBarStyle(sustainedTime);
 
     // Check if we've sustained long enough
-    if (totalSubmitTime >= this.submitThreshold) {
+    if (sustainedTime >= this.submitThreshold) {
+      console.log('Submit threshold reached, executing submit');
       this.executeAction('submit');
+      this.lastExecutedAction = currentTime;
       this.resetSubmitMode();
     }
   }
 
   handleNavigationZone(zone, currentTime) {
+    // Check if we're still in cooldown period
+    if (currentTime - this.lastExecutedAction < this.actionCooldown) {
+      return; // Still in cooldown, ignore input
+    }
+
     // If this is a new zone or we haven't started tracking time yet
     if (zone !== this.lastActionZone) {
       this.lastActionTime = currentTime;
@@ -271,47 +303,58 @@ class VoiceDatePicker {
     // For navigation zones, require sustained frequency
     if (sustainedTime >= this.actionThreshold) {
       this.executeAction(zone);
-      this.lastActionZone = null;
+      this.lastExecutedAction = currentTime;
+      // Don't reset lastActionZone to null - let it be overwritten naturally
     }
   }
 
-  updateProgressBarStyle(totalSubmitTime) {
+  updateProgressBarStyle(sustainedTime) {
     // Simplified color coding
     let backgroundColor = '#00ff99'; // Just green
 
     this.progressBar.style.background = backgroundColor;
 
     // Update message with countdown
-    const remaining = Math.max(0, this.submitThreshold - totalSubmitTime);
+    const remaining = Math.max(0, this.submitThreshold - sustainedTime);
     if (remaining > 0) {
       this.messageEl.innerHTML = `<div style="color: ${backgroundColor}">🎵 Submitting in ${remaining.toFixed(1)}s...</div>`;
     }
   }
 
   resetSubmitMode() {
+    console.log('resetSubmitMode called');
     this.isSubmitMode = false;
     this.resetProgress();
-    this.lastActionZone = null;
-    this.messageEl.innerHTML = '';
+    // Don't reset lastActionZone to null - let it transition naturally
+    this.lastActionTime = 0;
+    // Don't clear message here - let submitDate() handle success message display
+    // this.messageEl.innerHTML = '';
   }
 
   startProgress() {
+    // Clear any existing interval first
+    if (this.progressInterval) {
+      clearInterval(this.progressInterval);
+    }
+
     this.progressBar.style.width = '0%';
 
     this.progressInterval = setInterval(() => {
+      // Don't reset automatically - let the voice command logic handle it
       if (!this.isSubmitMode) {
-        this.resetProgress();
-        return;
+        return; // Just skip this frame, don't reset
       }
 
-      const elapsed = (Date.now() - this.submitStartTime) / 1000;
+      if (!this.lastActionTime) {
+        return; // Just skip this frame, don't reset
+      }
+
+      const elapsed = (Date.now() - this.lastActionTime) / 1000;
       const progress = (elapsed / this.submitThreshold) * 100;
 
       this.progressBar.style.width = `${Math.min(progress, 100)}%`;
 
-      if (progress >= 100) {
-        this.resetProgress();
-      }
+      // Don't auto-reset when reaching 100% - let the main logic handle it
     }, 50);
   }
 
@@ -324,7 +367,8 @@ class VoiceDatePicker {
     this.progressBar.style.background = 'limegreen'; // Reset to default color
     this.lastActionTime = 0;
     this.isSubmitMode = false;
-    this.messageEl.innerHTML = '';
+    // Don't clear message here - preserve success messages
+    // this.messageEl.innerHTML = '';
   }
 
   executeAction(zone) {
@@ -472,6 +516,7 @@ class VoiceDatePicker {
   }
 
   submitDate() {
+    console.log('submitDate called');
     const selectedDate = new Date(this.currentYear, this.currentMonth - 1, this.currentDay);
     const formattedDate = selectedDate.toLocaleDateString('en-US', {
       weekday: 'long',
@@ -480,13 +525,16 @@ class VoiceDatePicker {
       day: 'numeric'
     });
 
-    this.messageEl.innerHTML = `<div class="submitted">=� Selected: ${formattedDate}</div>`;
+    // Show success message using the existing .submitted CSS class
+    this.messageEl.innerHTML = `<div class="submitted">✅ Selected: ${formattedDate}</div>`;
+    console.log('Success message set:', this.messageEl.innerHTML);
 
-    // Stop listening
+    // Stop listening after successful submission
     this.isListening = false;
     if (this.audioContext) {
       this.audioContext.close();
     }
+    console.log('Audio stopped, submission complete');
   }
 }
 
