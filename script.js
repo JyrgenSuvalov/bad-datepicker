@@ -1,3 +1,33 @@
+const defaults = {
+  spread: 360,
+  ticks: 100,
+  gravity: 1,
+  decay: 0.94,
+  startVelocity: 30,
+};
+
+function shoot() {
+  confetti({
+    ...defaults,
+    particleCount: 50,
+    scalar: 1.2,
+    shapes: ["circle", "square"],
+    colors: ["#a864fd", "#29cdff", "#78ff44", "#ff718d", "#fdff6a"],
+  });
+
+  confetti({
+    ...defaults,
+    particleCount: 50,
+    scalar: 2,
+    shapes: ["emoji"],
+    shapeOptions: {
+      emoji: {
+        value: ["🎶", "🎵", "🎤", "🎵"],
+      },
+    },
+  });
+}
+
 class VoiceDatePicker {
   constructor() {
     this.audioContext = null;
@@ -104,7 +134,6 @@ class VoiceDatePicker {
 
     // Safety check: if we've been in submit mode for too long without progress, reset
     if (this.isSubmitMode && this.lastActionTime && (Date.now() - this.lastActionTime) > 5000) {
-      console.log('Submit mode timeout - forcing reset');
       this.forceReset();
     }
 
@@ -119,7 +148,6 @@ class VoiceDatePicker {
     this.lastActionTime = 0;
     this.lastExecutedAction = 0;
     this.resetProgress();
-    console.log('Force reset completed');
   }
 
   getFrequency() {
@@ -218,12 +246,9 @@ class VoiceDatePicker {
   }
 
   processVoiceCommand(frequency) {
-    console.log(`processVoiceCommand: freq=${frequency.toFixed(1)}, isListening=${this.isListening}`);
-
     if (frequency === 0) {
       // Only reset if we were actually tracking something
       if (this.lastActionZone !== null) {
-        console.log('Frequency is 0, resetting state');
         this.resetProgress();
         this.lastActionZone = null;
         this.isSubmitMode = false;
@@ -234,15 +259,12 @@ class VoiceDatePicker {
     const zone = this.getFrequencyZone(frequency);
     const currentTime = Date.now();
 
-    console.log(`Zone: ${zone}, Submit mode: ${this.isSubmitMode}, Last zone: ${this.lastActionZone}, Cooldown remaining: ${Math.max(0, this.actionCooldown - (currentTime - this.lastExecutedAction))}ms`);
-
     // Simplified approach: treat submit like any other zone
     if (zone === 'submit') {
       this.handleSubmitZone(zone, currentTime);
     } else {
       // Reset submit mode if we're not in submit zone
       if (this.isSubmitMode) {
-        console.log('Leaving submit mode');
         this.resetSubmitMode();
       }
       this.handleNavigationZone(zone, currentTime);
@@ -250,17 +272,13 @@ class VoiceDatePicker {
   }
 
   handleSubmitZone(zone, currentTime) {
-    console.log(`handleSubmitZone: cooldown check = ${currentTime - this.lastExecutedAction < this.actionCooldown}`);
-
     // Check if we're still in cooldown period for submit
     if (currentTime - this.lastExecutedAction < this.actionCooldown) {
-      console.log('Submit in cooldown, ignoring');
       return; // Still in cooldown, ignore input
     }
 
     // If this is a new zone or we haven't started tracking time yet
     if (zone !== this.lastActionZone) {
-      console.log('Starting submit zone tracking');
       this.lastActionTime = currentTime;
       this.lastActionZone = zone;
       this.isSubmitMode = true;
@@ -270,14 +288,12 @@ class VoiceDatePicker {
 
     // Calculate how long we've been in submit zone
     const sustainedTime = (currentTime - this.lastActionTime) / 1000;
-    console.log(`Submit sustained time: ${sustainedTime.toFixed(2)}s / ${this.submitThreshold}s`);
 
     // Update progress bar
     this.updateProgressBarStyle(sustainedTime);
 
     // Check if we've sustained long enough
     if (sustainedTime >= this.submitThreshold) {
-      console.log('Submit threshold reached, executing submit');
       this.executeAction('submit');
       this.lastExecutedAction = currentTime;
       // Don't call resetSubmitMode() here - submitDate() sets isListening=false,
@@ -323,7 +339,6 @@ class VoiceDatePicker {
   }
 
   resetSubmitMode() {
-    console.log('resetSubmitMode called');
     this.isSubmitMode = false;
     this.resetProgress();
     // Don't reset lastActionZone to null - let it transition naturally
@@ -516,8 +531,9 @@ class VoiceDatePicker {
     return new Date(year, month, 0).getDate();
   }
 
+
+
   submitDate() {
-    console.log('submitDate called');
     const selectedDate = new Date(this.currentYear, this.currentMonth - 1, this.currentDay);
     const formattedDate = selectedDate.toLocaleDateString('en-US', {
       weekday: 'long',
@@ -528,16 +544,17 @@ class VoiceDatePicker {
 
     // Show success message using the existing .submitted CSS class
     this.messageEl.innerHTML = `<div class="submitted">✅ Selected: ${formattedDate}</div>`;
-    console.log('Success message set:', this.messageEl.innerHTML);
+    shoot();
 
     // Stop listening after successful submission
     this.isListening = false;
     if (this.audioContext) {
       this.audioContext.close();
     }
-    console.log('Audio stopped, submission complete');
   }
 }
+
+
 
 // Initialize the application
 document.addEventListener('DOMContentLoaded', () => {
