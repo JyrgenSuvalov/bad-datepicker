@@ -560,7 +560,6 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 document.querySelector('.skip-app-link').addEventListener('click', (e) => {
-  e.preventDefault();
-  document.getElementById('apology').scrollIntoView({ behavior: 'smooth' });
+  // e.preventDefault();
   document.getElementById('apology').innerHTML = `<p class="sorry">I am so sorry for this horrible experience.</p>`;
 });
