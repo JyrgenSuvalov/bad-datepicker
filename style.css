@@ -35,9 +35,6 @@ dd {
 }
 
 html {
-  text-size-adjust: none;
-  -webkit-text-size-adjust: none;
-
   html:focus-within {
     scroll-behavior: smooth;
   }
@@ -86,6 +83,8 @@ h1 {
   font-family: "VCR_OSD_MONO", monospace;
   font-size: var(--step-5);
   text-shadow: 0 0 5px var(--accent-color);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 p {
@@ -291,6 +290,6 @@ button#start-btn:hover {
   }
 
   h1 {
-    text-shadow: 0 0 1px var(--accent-color);
+    text-shadow: none;
   }
 }
