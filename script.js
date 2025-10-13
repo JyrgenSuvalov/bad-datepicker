@@ -554,9 +554,13 @@ class VoiceDatePicker {
   }
 }
 
-
-
 // Initialize the application
 document.addEventListener('DOMContentLoaded', () => {
   new VoiceDatePicker();
+});
+
+document.querySelector('.skip-app-link').addEventListener('click', (e) => {
+  e.preventDefault();
+  document.getElementById('apology').scrollIntoView({ behavior: 'smooth' });
+  document.getElementById('apology').innerHTML = `<p class="sorry">I am so sorry for this horrible experience.</p>`;
 });
