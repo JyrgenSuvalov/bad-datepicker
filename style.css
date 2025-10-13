@@ -216,6 +216,29 @@ button#start-btn:hover {
   opacity: 0.7;
 }
 
+.footer {
+  margin-top: 6rem;
+
+  p {
+    font-size: 1rem;
+    color: #aaa;
+
+    a {
+      color: var(--accent-color);
+      text-decoration: none;
+
+      svg {
+        width: 1em;
+        height: 1em;
+        vertical-align: middle;
+        path {
+          fill: var(--accent-color);
+        }
+      }
+    }
+  }
+}
+
 @media (max-width: 700px) {
   .tuner,
   .labels {
