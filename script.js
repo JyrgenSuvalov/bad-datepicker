@@ -280,7 +280,8 @@ class VoiceDatePicker {
       console.log('Submit threshold reached, executing submit');
       this.executeAction('submit');
       this.lastExecutedAction = currentTime;
-      this.resetSubmitMode();
+      // Don't call resetSubmitMode() here - submitDate() sets isListening=false,
+      // which stops the analyze loop and preserves the success message
     }
   }
 
@@ -327,8 +328,8 @@ class VoiceDatePicker {
     this.resetProgress();
     // Don't reset lastActionZone to null - let it transition naturally
     this.lastActionTime = 0;
-    // Don't clear message here - let submitDate() handle success message display
-    // this.messageEl.innerHTML = '';
+    // Clear the message when exiting submit mode (cancelling)
+    this.messageEl.innerHTML = '';
   }
 
   startProgress() {
