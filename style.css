@@ -19,6 +19,9 @@
   --step-3: clamp(1.944rem, 1.2858rem + 2.9253vw, 3.5529rem);
   --step-4: clamp(2.3328rem, 1.3497rem + 4.3695vw, 4.736rem);
   --step-5: clamp(2.7994rem, 1.3619rem + 6.3886vw, 6.3131rem);
+
+  --wrapper-width: clamp(16rem, 93vw, 85rem);
+  --gutter: var(--space-s-m, 1rem);
 }
 
 body,
@@ -40,6 +43,15 @@ html {
   html:focus-within {
     scroll-behavior: smooth;
   }
+}
+
+.wrapper {
+  width: var(--wrapper-width);
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: var(--gutter);
+  padding-right: var(--gutter);
+  position: relative;
 }
 
 .skip-app-link {
