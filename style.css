@@ -262,7 +262,7 @@ button#start-btn:hover {
 }
 
 .footer {
-  margin-top: 6rem;
+  margin-top: 2em;
 
   p {
     font-size: var(--step--1);
@@ -288,5 +288,9 @@ button#start-btn:hover {
   .tuner,
   .labels {
     width: 90%;
+  }
+
+  h1 {
+    text-shadow: 0 0 1px var(--accent-color);
   }
 }
