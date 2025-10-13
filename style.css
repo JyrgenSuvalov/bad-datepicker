@@ -9,7 +9,7 @@
   --main-bg-color: oklch(0.1471 0.035 220.43);
   --accent-color: oklch(0.8724 0.1932 188.01);
 
-  --flow-space: 2em;
+  --flow-space: 1em;
 
   --step--2: clamp(0.7813rem, 0.7555rem + 0.1144vw, 0.8442rem);
   --step--1: clamp(0.9375rem, 0.8607rem + 0.3414vw, 1.1253rem);
@@ -89,7 +89,7 @@ body {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  height: 100vh;
+  min-height: 100vh;
   text-align: center;
 }
 
