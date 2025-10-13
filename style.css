@@ -1,8 +1,24 @@
+@font-face {
+  font-family: "VCR_OSD_MONO";
+  src: url("fonts/VCR_OSD_MONO.ttf") format("truetype");
+  font-weight: normal;
+  font-style: normal;
+}
+
 :root {
   --main-bg-color: oklch(0.1471 0.035 220.43);
   --accent-color: oklch(0.8724 0.1932 188.01);
 
   --flow-space: 2em;
+
+  --step--2: clamp(0.7813rem, 0.7555rem + 0.1144vw, 0.8442rem);
+  --step--1: clamp(0.9375rem, 0.8607rem + 0.3414vw, 1.1253rem);
+  --step-0: clamp(1.125rem, 0.9716rem + 0.6818vw, 1.5rem);
+  --step-1: clamp(1.35rem, 1.0843rem + 1.1809vw, 1.9995rem);
+  --step-2: clamp(1.62rem, 1.1924rem + 1.9006vw, 2.6653rem);
+  --step-3: clamp(1.944rem, 1.2858rem + 2.9253vw, 3.5529rem);
+  --step-4: clamp(2.3328rem, 1.3497rem + 4.3695vw, 4.736rem);
+  --step-5: clamp(2.7994rem, 1.3619rem + 6.3886vw, 6.3131rem);
 }
 
 body,
@@ -27,6 +43,10 @@ html {
   }
 }
 
+.info {
+  margin-top: 1em;
+}
+
 .flow > * + * {
   margin-top: var(--flow-space, 1em);
 }
@@ -34,7 +54,7 @@ html {
 body {
   background: var(--main-bg-color);
   color: #fff;
-  font-family: system-ui, sans-serif;
+  font-family: "VCR_OSD_MONO", monospace;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -44,7 +64,13 @@ body {
 }
 
 h1 {
+  font-family: "VCR_OSD_MONO", monospace;
+  font-size: var(--step-5);
   text-shadow: 0 0 5px var(--accent-color);
+}
+
+p {
+  font-size: var(--step--0);
 }
 
 button#start-btn {
@@ -134,7 +160,7 @@ button#start-btn:hover {
 }
 
 .info {
-  font-size: 1rem;
+  font-size: var(--step--0);
   opacity: 0.8;
 }
 
@@ -212,7 +238,7 @@ button#start-btn:hover {
   width: 600px;
   display: flex;
   justify-content: space-between;
-  font-size: 0.8rem;
+  font-size: var(--step--1);
   opacity: 0.7;
 }
 
@@ -220,7 +246,7 @@ button#start-btn:hover {
   margin-top: 6rem;
 
   p {
-    font-size: 1rem;
+    font-size: var(--step--1);
     color: #aaa;
 
     a {
