@@ -35,6 +35,8 @@ dd {
 }
 
 html {
+  background: var(--main-bg-color);
+
   html:focus-within {
     scroll-behavior: smooth;
   }
